@@ -9,15 +9,15 @@ import Flutter
 import GoogleCast
 
 class ChromeCastController: NSObject, FlutterPlatformView {
-
+    
     // MARK: - Internal properties
-
+    
     private let channel: FlutterMethodChannel
     private let chromeCastButton: GCKUICastButton
     private let sessionManager = GCKCastContext.sharedInstance().sessionManager
-
+    
     // MARK: - Init
-
+    
     init(
         withFrame frame: CGRect,
         viewIdentifier viewId: Int64,
@@ -29,18 +29,18 @@ class ChromeCastController: NSObject, FlutterPlatformView {
         super.init()
         self.configure(arguments: args)
     }
-
+    
     func view() -> UIView {
         return chromeCastButton
     }
-
+    
     private func configure(arguments args: Any?) {
         setTint(arguments: args)
         setMethodCallHandler()
     }
-
+    
     // MARK: - Styling
-
+    
     private func setTint(arguments args: Any?) {
         guard
             let args = args as? [String: Any],
@@ -48,8 +48,8 @@ class ChromeCastController: NSObject, FlutterPlatformView {
             let green = args["green"] as? CGFloat,
             let blue = args["blue"] as? CGFloat,
             let alpha = args["alpha"] as? Int else {
-                print("Invalid color")
-                return
+            print("Invalid color")
+            return
         }
         chromeCastButton.tintColor = UIColor(
             red: red / 255,
@@ -58,26 +58,26 @@ class ChromeCastController: NSObject, FlutterPlatformView {
             alpha: CGFloat(alpha) / 255
         )
     }
-
+    
     // MARK: - Flutter methods handling
-
+    
     private func setMethodCallHandler() {
         channel.setMethodCallHandler { call, result in
             self.onMethodCall(call: call, result: result)
         }
     }
-
+    
     private func setVolume(args: Any?) {
-            guard
-                 let args = args as? [String: Any],
-                 let volume = args["volume"] as? Float,
-                 let client = sessionManager.currentCastSession?.remoteMediaClient else {
-                   return
-                 }
+        guard
+            let args = args as? [String: Any],
+            let volume = args["volume"] as? Float,
+            let client = sessionManager.currentCastSession?.remoteMediaClient else {
+            return
+        }
         client.setStreamVolume(volume);
-
+        
     }
-
+    
     private func onMethodCall(call: FlutterMethodCall, result: FlutterResult) {
         switch call.method {
         case "chromeCast#wait":
@@ -100,9 +100,9 @@ class ChromeCastController: NSObject, FlutterPlatformView {
             result(nil)
             break
         case "chromeCast#setVolume":
-           setVolume(args: call.arguments)
-           result(nil)
-           break
+            setVolume(args: call.arguments)
+            result(nil)
+            break
         case "chromeCast#stop":
             stop()
             result(nil)
@@ -132,69 +132,71 @@ class ChromeCastController: NSObject, FlutterPlatformView {
             break
         }
     }
-
+    
     private func loadMedia(args: Any?) {
-         guard
-             let args = args as? [String: Any],
-             let url = args["url"] as? String,
-             let mediaUrl = URL(string: url) else {
-                 print("Invalid URL")
-                 return
-         }
-         
-             let _title = args["title"] as? String
-             let _subtitle = args["subtitle"] as? String
-             let _image = args["image"] as? String
-             let live = args["live"] as? Bool
+        guard
+            let args = args as? [String: Any],
+            let url = args["url"] as? String,
+            let mediaUrl = URL(string: url) else {
+            print("Invalid URL")
+            return
+        }
+        
+        let _title = args["title"] as? String
+        let _subtitle = args["subtitle"] as? String
+        let _image = args["image"] as? String
+        let live = args["live"] as? Bool
+        let customData = args["customData"] as? [AnyHashable: AnyHashable]
 
-         let movieMetadata = GCKMediaMetadata()
-
-         if let title = _title { 
-         movieMetadata.setString(title, forKey: kGCKMetadataKeyTitle)
-         }
-         if let subtitle = _subtitle {
-           movieMetadata.setString(subtitle, forKey: kGCKMetadataKeySubtitle)
-         }
-         if let image = _image {
-          if let imageUrl = URL(string: image){
-           movieMetadata.addImage(GCKImage(url: imageUrl, width: 480, height: 360))
-          }
-         }
-
-         let mediaInfoBuilder = GCKMediaInformationBuilder.init(contentURL: mediaUrl)
-         mediaInfoBuilder.streamType = .buffered
-         if let islive = live {
-          if islive {
-            mediaInfoBuilder.streamType = .live
-          }
-         }
-         mediaInfoBuilder.contentType = "video/mp4"
-         mediaInfoBuilder.metadata = movieMetadata;
-         let mediaInformation = mediaInfoBuilder.build()
-
-         if let request = sessionManager.currentCastSession?.remoteMediaClient?.loadMedia(mediaInformation) {
-             request.delegate = self
-         }
+        let movieMetadata = GCKMediaMetadata()
+        
+        if let title = _title {
+            movieMetadata.setString(title, forKey: kGCKMetadataKeyTitle)
+        }
+        if let subtitle = _subtitle {
+            movieMetadata.setString(subtitle, forKey: kGCKMetadataKeySubtitle)
+        }
+        if let image = _image {
+            if let imageUrl = URL(string: image){
+                movieMetadata.addImage(GCKImage(url: imageUrl, width: 480, height: 360))
+            }
+        }
+        
+        let mediaInfoBuilder = GCKMediaInformationBuilder.init(contentURL: mediaUrl)
+        mediaInfoBuilder.streamType = .buffered
+        if let islive = live {
+            if islive {
+                mediaInfoBuilder.streamType = .live
+            }
+        }
+        mediaInfoBuilder.contentType = "video/mp4"
+        mediaInfoBuilder.metadata = movieMetadata
+        mediaInfoBuilder.customData = customData
+        let mediaInformation = mediaInfoBuilder.build()
+        
+        if let request = sessionManager.currentCastSession?.remoteMediaClient?.loadMedia(mediaInformation) {
+            request.delegate = self
+        }
     }
-
+    
     private func play() {
         if let request = sessionManager.currentCastSession?.remoteMediaClient?.play() {
             request.delegate = self
         }
     }
-
+    
     private func pause() {
         if let request = sessionManager.currentCastSession?.remoteMediaClient?.pause() {
             request.delegate = self
         }
     }
-
+    
     private func seek(args: Any?) {
         guard
             let args = args as? [String: Any],
             let relative = args["relative"] as? Bool,
             let interval = args["interval"] as? Double else {
-                return
+            return
         }
         let seekOptions = GCKMediaSeekOptions()
         seekOptions.relative = relative
@@ -203,68 +205,68 @@ class ChromeCastController: NSObject, FlutterPlatformView {
             request.delegate = self
         }
     }
-
+    
     private func stop() {
         if let request = sessionManager.currentCastSession?.remoteMediaClient?.stop() {
             request.delegate = self
         }
     }
-
+    
     private func getMediaInfo() -> [String: String]? {
-       return  mediaInfoToMap(_mediaInfo: sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.mediaInformation)
+        return  mediaInfoToMap(_mediaInfo: sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.mediaInformation)
     }
-
+    
     private func mediaInfoToMap(_mediaInfo: GCKMediaInformation?) -> [String: String]? {
-            var info = [String: String]()
-            if let mediaInfo = _mediaInfo {
-                info["id"] = mediaInfo.contentID
-                if let u = mediaInfo.contentURL {
-                  info["url"] = u.absoluteString
-                }
-                info["contentType"] = mediaInfo.contentType
-                if let meta = mediaInfo.metadata {
-
-                    info["title"] =  meta.string(forKey: kGCKMetadataKeyTitle)
-                    info["subtitle"] =  meta.string(forKey: kGCKMetadataKeySubtitle)
-                    let imgs = meta.images()
-                               if (imgs.count > 0){
-                                  if let img = imgs[0] as? GCKImage {
-                                   info["image"] = img.url.absoluteString
-                                  }
-
-                               }
-
-
-
-                }
+        var info = [String: String]()
+        if let mediaInfo = _mediaInfo {
+            info["id"] = mediaInfo.contentID
+            if let u = mediaInfo.contentURL {
+                info["url"] = u.absoluteString
             }
-            return info;
+            info["contentType"] = mediaInfo.contentType
+            if let meta = mediaInfo.metadata {
+                
+                info["title"] =  meta.string(forKey: kGCKMetadataKeyTitle)
+                info["subtitle"] =  meta.string(forKey: kGCKMetadataKeySubtitle)
+                let imgs = meta.images()
+                if (imgs.count > 0){
+                    if let img = imgs[0] as? GCKImage {
+                        info["image"] = img.url.absoluteString
+                    }
+                    
+                }
+                
+                
+                
+            }
         }
-
+        return info;
+    }
+    
     private func isConnected() -> Bool {
         return sessionManager.currentCastSession?.remoteMediaClient?.connected ?? false
     }
-
+    
     private func isPlaying() -> Bool {
         return sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.playerState == GCKMediaPlayerState.playing
     }
-
+    
     private func addSessionListener() {
         sessionManager.add(self)
     }
-
+    
     private func removeSessionListener() {
         sessionManager.remove(self)
     }
-
-    private func position() -> Int {        
+    
+    private func position() -> Int {
         return Int(sessionManager.currentCastSession?.remoteMediaClient?.approximateStreamPosition() ?? 0) * 1000
     }
-
+    
     private func duration() -> Int {
-            return Int(sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.mediaInformation?.streamDuration ?? 0) * 1000
+        return Int(sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.mediaInformation?.streamDuration ?? 0) * 1000
     }
-
+    
 }
 
 // MARK: - GCKSessionManagerListener
@@ -274,7 +276,7 @@ extension ChromeCastController: GCKSessionManagerListener {
         session.remoteMediaClient?.add(self)
         channel.invokeMethod("chromeCast#didStartSession", arguments: nil)
     }
-
+    
     func sessionManager(_ sessionManager: GCKSessionManager, didEnd session: GCKSession, withError error: Error?) {
         channel.invokeMethod("chromeCast#didEndSession", arguments: nil)
     }
@@ -286,7 +288,7 @@ extension ChromeCastController: GCKRequestDelegate {
     func requestDidComplete(_ request: GCKRequest) {
         channel.invokeMethod("chromeCast#requestDidComplete", arguments: nil)
     }
-
+    
     func request(_ request: GCKRequest, didFailWithError error: GCKError) {
         channel.invokeMethod("chromeCast#requestDidFail", arguments: ["error" : error.localizedDescription])
     }
@@ -304,7 +306,7 @@ extension ChromeCastController : GCKRemoteMediaClientListener {
         } else if (playerStatus == GCKMediaPlayerState.idle && mediaStatus?.idleReason == GCKMediaPlayerIdleReason.finished) {
             retCode = 2
         }else if (playerStatus == GCKMediaPlayerState.paused) {
-          retCode = 3;
+            retCode = 3;
         }
         channel.invokeMethod("chromeCast#didPlayerStatusUpdated", arguments: retCode)
     }

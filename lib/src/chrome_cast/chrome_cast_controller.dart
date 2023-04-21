@@ -2,32 +2,113 @@ part of flutter_cast_video;
 
 final ChromeCastPlatform _chromeCastPlatform = ChromeCastPlatform.instance;
 
+/// Callback method for when a request has failed.
+typedef void OnRequestFailed(String? error);
+
+enum CastPlayerStatus { buffering, playing, idle, paused, unknown }
+
+typedef OnPlayerStatusUpdated = void Function(CastPlayerStatus status);
+
 /// Controller for a single ChromeCastButton instance running on the host platform.
 class ChromeCastController {
   /// The id for this controller
   final int id;
+
+  /// Called when a cast session has started.
+  final Set<VoidCallback> _onSessionStartedListeners = {};
+
+  /// Called when a cast session has ended.
+  final Set<VoidCallback> _onSessionEndedListeners = {};
+
+  /// Called when a cast request has successfully completed.
+  final Set<VoidCallback> _onRequestCompletedListeners = {};
+
+  /// Called when a cast request has failed.
+  final Set<OnRequestFailed> _onRequestFailedListeners = {};
+
+  /// Called when player status updated
+  final Set<OnPlayerStatusUpdated> _onPlayerStatusUpdatedListeners = {};
 
   ChromeCastController._({required this.id});
 
   /// Initialize control of a [ChromeCastButton] with [id].
   static Future<ChromeCastController> init(int id) async {
     await _chromeCastPlatform.init(id);
-    return ChromeCastController._(id: id);
+    return ChromeCastController._(id: id)..addSessionListener();
   }
 
   /// Add listener for receive callbacks.
   Future<void> addSessionListener() {
+    _chromeCastPlatform
+      ..onSessionStarted(id: id).listen(
+          (_) => _onSessionStartedListeners.forEach((listener) => listener()))
+      ..onSessionEnded(id: id).listen(
+          (_) => _onSessionEndedListeners.forEach((listener) => listener()))
+      ..onRequestCompleted(id: id).listen(
+          (_) => _onRequestCompletedListeners.forEach((listener) => listener()))
+      ..onRequestFailed(id: id).listen((event) => _onRequestFailedListeners
+          .forEach((listener) => listener(event.error)))
+      ..onPlayerStatusUpdated(id: id).listen((event) =>
+          _onPlayerStatusUpdatedListeners.forEach((listener) => listener(
+              CastPlayerStatus.values.firstWhere(
+                  (status) => status.index == event.status,
+                  orElse: () => CastPlayerStatus.unknown))));
+
     return _chromeCastPlatform.addSessionListener(id: id);
   }
 
   /// Remove listener for receive callbacks.
   Future<void> removeSessionListener() {
+    _onSessionStartedListeners.clear();
+    _onSessionEndedListeners.clear();
+    _onRequestCompletedListeners.clear();
+    _onRequestFailedListeners.clear();
+    _onPlayerStatusUpdatedListeners.clear();
+
     return _chromeCastPlatform.removeSessionListener(id: id);
   }
 
+  void addOnSessionStartedListener(VoidCallback listener) =>
+      _onSessionStartedListeners.add(listener);
+
+  void removeOnSessionStartedListener(VoidCallback listener) =>
+      _onSessionStartedListeners.remove(listener);
+
+  void addOnSessionEndedListener(VoidCallback listener) =>
+      _onSessionEndedListeners.add(listener);
+
+  void removeOnSessionEndedListener(VoidCallback listener) =>
+      _onSessionEndedListeners.remove(listener);
+
+  void addOnRequestCompletedListener(VoidCallback listener) =>
+      _onRequestCompletedListeners.add(listener);
+
+  void removeOnRequestCompletedListener(VoidCallback listener) =>
+      _onRequestCompletedListeners.remove(listener);
+
+  void addOnRequestFailedListener(OnRequestFailed listener) =>
+      _onRequestFailedListeners.add(listener);
+
+  void removeOnRequestFailedListener(OnRequestFailed listener) =>
+      _onRequestFailedListeners.remove(listener);
+
+  void addOnPlayerStatusUpdatedListeners(OnPlayerStatusUpdated listener) =>
+      _onPlayerStatusUpdatedListeners.add(listener);
+
+  void removeOnPlayerStatusUpdatedListeners(OnPlayerStatusUpdated listener) =>
+      _onPlayerStatusUpdatedListeners.remove(listener);
+
   /// Load a new media by providing an [url].
-  Future<void> loadMedia(String url, {String title = '', String subtitle = '', String image = '', bool? live}) {
-    return _chromeCastPlatform.loadMedia(url, title, subtitle, image, id: id,live: live);
+  Future<void> loadMedia(String url,
+      {String title = '',
+      String subtitle = '',
+      String image = '',
+      Map<String, dynamic> customData = const {},
+      bool? live}) {
+    return _chromeCastPlatform.loadMedia(url, title, subtitle, image,
+        id: id,
+        customData: customData,
+        live: live);
   }
 
   /// Plays the video playback.
@@ -53,7 +134,7 @@ class ChromeCastController {
   }
 
   /// Get current volume
-  Future<Map<dynamic,dynamic>?> getMediaInfo() {
+  Future<Map<dynamic, dynamic>?> getMediaInfo() {
     return _chromeCastPlatform.getMediaInfo(id: id);
   }
 
