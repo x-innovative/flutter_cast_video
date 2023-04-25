@@ -177,10 +177,14 @@ class ChromeCastController(
 
 	private fun addSessionListener() {
 		sessionManager?.addSessionManagerListener(this)
+		if(isConnected()) {
+			sessionManager?.currentCastSession?.remoteMediaClient?.registerCallback(mRemoteMediaClientListener)
+		}
 	}
 
 	private fun removeSessionListener() {
 		sessionManager?.removeSessionManagerListener(this)
+		sessionManager?.currentCastSession?.remoteMediaClient?.unregisterCallback(mRemoteMediaClientListener)
 	}
 
 	private val mRemoteMediaClientListener: RemoteMediaClient.Callback =
