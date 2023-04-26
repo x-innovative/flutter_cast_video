@@ -75,8 +75,88 @@ class ChromeCastController: NSObject, FlutterPlatformView {
             return
         }
         client.setStreamVolume(volume);
-        
     }
+
+    private func getPlaybackRate() -> Float? {
+        return sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.playbackRate
+    }
+
+    private func setPlaybackRate(args: Any?) {
+        guard
+            let args = args as? [String: Any],
+            let rate = args["rate"] as? Float,
+            let client = sessionManager.currentCastSession?.remoteMediaClient else {
+            return
+        }
+        client.setPlaybackRate(rate).delegate = self
+    }
+    
+    private func getAudioTrack() -> String? {
+        guard
+            let client = sessionManager.currentCastSession?.remoteMediaClient,
+            let tracks = client.mediaStatus?.mediaInformation?.mediaTracks?.filter({(track) -> Bool in track.type == GCKMediaTrackType.audio }),
+            let ids = sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.activeTrackIDs
+        else {
+            return nil
+        }
+        
+        return tracks.first { track in
+            ids.contains(track.identifier as NSNumber)
+        }?.languageCode
+    }
+
+    private func setAudioTrack(args: Any?) {
+        guard
+            let args = args as? [String: Any],
+            let lang = args["lang"] as? String,
+            let client = sessionManager.currentCastSession?.remoteMediaClient,
+            let tracks = client.mediaStatus?.mediaInformation?.mediaTracks?.filter({(track) -> Bool in track.type == GCKMediaTrackType.audio }),
+            let selectedTrackId = tracks.first(where: {track in track.languageCode == lang})?.identifier as NSNumber?
+        else {
+            return
+        }
+        
+        let trackIds = tracks.map({ track in
+            track.identifier
+        })
+        var ids = client.mediaStatus?.activeTrackIDs?.filter{id in !trackIds.contains(Int(truncating: id))} ?? []
+        ids.append(selectedTrackId)
+        client.setActiveTrackIDs(ids).delegate = self
+    }
+    
+    private func getSubtitleTrack() -> String? {
+        guard
+            let client = sessionManager.currentCastSession?.remoteMediaClient,
+            let tracks = client.mediaStatus?.mediaInformation?.mediaTracks?.filter({(track) -> Bool in track.type == GCKMediaTrackType.text }),
+            let ids = sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.activeTrackIDs
+        else {
+            return nil
+        }
+        
+        return tracks.first { track in
+            ids.contains(track.identifier as NSNumber)
+        }?.languageCode
+    }
+    
+    private func setSubtitleTrack(args: Any?) {
+        guard
+            let args = args as? [String: Any],
+            let lang = args["lang"] as? String,
+            let client = sessionManager.currentCastSession?.remoteMediaClient,
+            let tracks = client.mediaStatus?.mediaInformation?.mediaTracks?.filter({(track) -> Bool in track.type == GCKMediaTrackType.text }),
+            let selectedTrackId = tracks.first(where: {track in track.languageCode == lang})?.identifier as NSNumber?
+        else {
+            return
+        }
+        
+        let trackIds = tracks.map({ track in
+            track.identifier
+        })
+        var ids = client.mediaStatus?.activeTrackIDs?.filter{id in !trackIds.contains(Int(truncating: id))} ?? []
+        ids.append(selectedTrackId)
+        client.setActiveTrackIDs(ids).delegate = self
+    }
+    
     
     private func onMethodCall(call: FlutterMethodCall, result: FlutterResult) {
         switch call.method {
@@ -127,6 +207,21 @@ class ChromeCastController: NSObject, FlutterPlatformView {
             result(nil)
         case "chromeCast#position":
             result(position())
+        case "chromeCast#getPlaybackRate":
+            result(getPlaybackRate())
+        case "chromeCast#setPlaybackRate":
+            setPlaybackRate(args: call.arguments)
+            result(nil)
+        case "chromeCast#getAudioTrack":
+            result(getAudioTrack())
+        case "chromeCast#setAudioTrack":
+            setAudioTrack(args: call.arguments)
+            result(nil)
+        case "chromeCast#getSubtitleTrack":
+            result(getSubtitleTrack())
+        case "chromeCast#setSubtitleTrack":
+            setSubtitleTrack(args: call.arguments)
+            result(nil)
         default:
             result(nil)
             break
@@ -212,18 +307,29 @@ class ChromeCastController: NSObject, FlutterPlatformView {
         }
     }
     
-    private func getMediaInfo() -> [String: String]? {
+    private func getMediaInfo() -> [String: AnyHashable?]? {
         return  mediaInfoToMap(_mediaInfo: sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.mediaInformation)
     }
     
-    private func mediaInfoToMap(_mediaInfo: GCKMediaInformation?) -> [String: String]? {
-        var info = [String: String]()
+    private func mediaInfoToMap(_mediaInfo: GCKMediaInformation?) -> [String: AnyHashable?]? {
+        var info = [String: AnyHashable?]()
         if let mediaInfo = _mediaInfo {
             info["id"] = mediaInfo.contentID
             if let u = mediaInfo.contentURL {
                 info["url"] = u.absoluteString
             }
             info["contentType"] = mediaInfo.contentType
+            info["audioTracks"] = mediaInfo.mediaTracks?.filter({(track) -> Bool in
+                track.type == GCKMediaTrackType.audio
+            }).map({(track) -> String in
+                track.languageCode ?? "unknown"
+            })
+            info["subtitleTracks"] = Array(Set(mediaInfo.mediaTracks?.filter({(track) -> Bool in
+                track.type == GCKMediaTrackType.text
+            }).map({(track) -> String in
+                track.languageCode ?? "unknown"
+            }) ?? []))
+            info["customData"] = mediaInfo.customData as? [String: AnyHashable?]
             if let meta = mediaInfo.metadata {
                 
                 info["title"] =  meta.string(forKey: kGCKMetadataKeyTitle)
@@ -253,6 +359,10 @@ class ChromeCastController: NSObject, FlutterPlatformView {
     
     private func addSessionListener() {
         sessionManager.add(self)
+        if(isConnected()) {
+            sessionManager.currentCastSession?.remoteMediaClient?.add(self)
+            channel.invokeMethod("chromeCast#didStartSession", arguments: nil)
+        }
     }
     
     private func removeSessionListener() {
@@ -278,6 +388,7 @@ extension ChromeCastController: GCKSessionManagerListener {
     }
     
     func sessionManager(_ sessionManager: GCKSessionManager, didEnd session: GCKSession, withError error: Error?) {
+        session.remoteMediaClient?.remove(self)
         channel.invokeMethod("chromeCast#didEndSession", arguments: nil)
     }
 }

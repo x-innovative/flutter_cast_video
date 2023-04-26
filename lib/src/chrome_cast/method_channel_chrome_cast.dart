@@ -169,6 +169,42 @@ class MethodChannelChromeCast extends ChromeCastPlatform {
     );
   }
 
+  @override
+  Future<String?> getSubtitleTrack({required int id}) async {
+    return await channel(id)!
+            .invokeMethod<String?>('chromeCast#getSubtitleTrack');
+  }
+
+  @override
+  Future<void> setSubtitleTrack(String lang, {required int id}) {
+    return channel(id)!
+        .invokeMethod<void>('chromeCast#setSubtitleTrack', {"lang": lang});
+  }
+
+  @override
+  Future<String?> getAudioTrack({required int id}) async {
+    return await channel(id)!
+            .invokeMethod<String>('chromeCast#getAudioTrack');
+  }
+
+  @override
+  Future<void> setAudioTrack(String lang, {required int id}) {
+    return channel(id)!
+        .invokeMethod<void>('chromeCast#setAudioTrack', {"lang": lang});
+  }
+
+  @override
+  Future<double?> getPlaybackRate({required int id}) async {
+    return await channel(id)!
+            .invokeMethod<double>('chromeCast#getPlaybackRate');
+  }
+
+  @override
+  Future<void> setPlaybackRate(double rate, {required int id}) {
+    return channel(id)!
+        .invokeMethod<void>('chromeCast#setPlaybackRate', {"rate": rate});
+  }
+
   Future<dynamic> _handleMethodCall(MethodCall call, int id) async {
     switch (call.method) {
       case 'chromeCast#didStartSession':

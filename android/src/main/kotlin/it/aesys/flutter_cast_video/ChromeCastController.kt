@@ -14,6 +14,7 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.platform.PlatformView
+import org.json.JSONArray
 import org.json.JSONObject
 
 
@@ -114,35 +115,42 @@ class ChromeCastController(
 						?: 0
 				)
 			}
-			val request =
-				sessionManager?.currentCastSession?.remoteMediaClient?.seek(interval?.toLong() ?: 0)
+			val request = sessionManager?.currentCastSession?.remoteMediaClient?.seek(
+				MediaSeekOptions.Builder().setPosition(interval?.toLong() ?: 0).build()
+			)
 			request?.addStatusListener(this)
 		}
 	}
 
-	private fun mediaInfoToMap(mediaInfo: MediaInfo?): HashMap<String, String>? {
-		var info = HashMap<String, String>()
-		mediaInfo?.let {
-			var id = mediaInfo.getContentId() ?: ""
+	private fun mediaInfoToMap(mediaInfo: MediaInfo?): HashMap<String, Any?>? {
+		return mediaInfo?.let {
+			val info = hashMapOf<String, Any?>()
+			val id = mediaInfo.contentId
 			info["id"] = id
-			info["url"] = mediaInfo.getContentUrl() ?: id
-			info["contentType"] = mediaInfo.getContentType() ?: ""
-			// info["customData"] = mediaInfo.getCustomData().toString() ?: ""
-			var meta = mediaInfo.getMetadata()
-			meta?.let {
-				info["title"] = meta.getString(MediaMetadata.KEY_TITLE) ?: ""
-				info["subtitle"] = meta.getString(MediaMetadata.KEY_SUBTITLE) ?: ""
-				val imgs = meta.getImages()
+			info["url"] = mediaInfo.contentUrl ?: id
+			info["contentType"] = mediaInfo.contentType ?: ""
+			info["customData"] = mediaInfo.customData?.toMap()
+			info["audioTracks"] =
+				mediaInfo.mediaTracks?.filter { track -> track.type == MediaTrack.TYPE_AUDIO }
+					?.map { track -> track.language }?.toList()
+			info["subtitleTracks"] =
+				mediaInfo.mediaTracks?.filter { track -> track.type == MediaTrack.TYPE_TEXT || track.subtype == MediaTrack.SUBTYPE_SUBTITLES }
+					?.map { track -> track.language }?.toList()
+			mediaInfo.metadata?.apply {
+				info["title"] = getString(MediaMetadata.KEY_TITLE) ?: ""
+				info["subtitle"] = getString(MediaMetadata.KEY_SUBTITLE) ?: ""
+				val imgs = images
 				if (imgs.size > 0) {
-					info["image"] = imgs[0].getUrl().toString();
+					info["image"] = imgs[0].url.toString()
 				}
 			}
+
+			info
 		}
-		return info;
 	}
 
-	private fun getMediaInfo(): HashMap<String, String>? =
-		mediaInfoToMap(sessionManager?.currentCastSession?.remoteMediaClient?.getMediaInfo())
+	private fun getMediaInfo(): HashMap<String, Any?>? =
+		mediaInfoToMap(sessionManager?.currentCastSession?.remoteMediaClient?.mediaInfo)
 
 
 	private fun setVolume(args: Any?) {
@@ -175,16 +183,99 @@ class ChromeCastController(
 	private fun duration() =
 		sessionManager?.currentCastSession?.remoteMediaClient?.mediaInfo?.streamDuration ?: 0
 
+	private fun getSubtitleTrack() =
+		sessionManager?.currentCastSession?.remoteMediaClient?.mediaInfo?.mediaTracks?.filter { track -> track.type == MediaTrack.TYPE_TEXT || track.subtype == MediaTrack.SUBTYPE_SUBTITLES }
+			?.let { tracks ->
+				sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.activeTrackIds?.toList()
+					?.let { ids ->
+						tracks.firstOrNull { track -> ids.contains(track.id) }?.language
+					}
+
+			}
+
+	private fun getAudioTrackLang() =
+		sessionManager?.currentCastSession?.remoteMediaClient?.mediaInfo?.mediaTracks?.filter { track -> track.type == MediaTrack.TYPE_AUDIO }
+			?.let { tracks ->
+				sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.activeTrackIds?.toList()
+					?.let { ids ->
+						tracks.firstOrNull { track -> ids.contains(track.id) }?.language ?: ""
+					}
+
+			}
+
+	private fun setSubtitleTrack(args: Any?) = (args as Map<*, *>?)?.apply {
+		(this["lang"] as String?)?.let { lang ->
+			sessionManager?.currentCastSession?.remoteMediaClient?.mediaInfo?.mediaTracks?.filter { track -> track.type == MediaTrack.TYPE_TEXT || track.subtype == MediaTrack.SUBTYPE_SUBTITLES }
+				?.also { tracks ->
+					if (tracks.isNotEmpty()) {
+						tracks.firstOrNull { track -> track.language == lang }?.also { track ->
+
+							(sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.activeTrackIds?.toMutableList()
+								?: mutableListOf()).also { ids ->
+								ids.removeAll(tracks.map { track -> track.id }.toSet())
+								ids.add(track.id)
+
+								sessionManager.currentCastSession?.remoteMediaClient?.apply {
+									setActiveMediaTracks(
+										ids.toLongArray()
+									).addStatusListener { status -> onComplete(status) }
+								}
+							}
+						}
+					}
+				}
+		}
+	}
+
+
+	private fun setAudioTrack(args: Any?) = (args as Map<*, *>?)?.apply {
+		(this["lang"] as String?)?.let { lang ->
+			sessionManager?.currentCastSession?.remoteMediaClient?.mediaInfo?.mediaTracks?.filter { track -> track.type == MediaTrack.TYPE_AUDIO }
+				?.also { tracks ->
+					if (tracks.isNotEmpty()) {
+						tracks.firstOrNull { track -> track.language == lang }?.also { track ->
+
+							(sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.activeTrackIds?.toMutableList()
+								?: mutableListOf()).also { ids ->
+								ids.removeAll(tracks.map { track -> track.id }.toSet())
+								ids.add(track.id)
+
+								sessionManager.currentCastSession?.remoteMediaClient?.apply {
+									setActiveMediaTracks(
+										ids.toLongArray()
+									).addStatusListener { status -> onComplete(status) }
+								}
+							}
+						}
+					}
+				}
+		}
+	}
+
+
+	private fun getPlaybackRate() =
+		sessionManager?.currentCastSession?.remoteMediaClient?.mediaStatus?.playbackRate
+
+	private fun setPlaybackRate(args: Any?) = (args as Map<*, *>?)?.apply {
+		(this["rate"] as Double?)?.apply {
+			sessionManager?.currentCastSession?.remoteMediaClient?.setPlaybackRate(this)
+				?.addStatusListener { status -> onComplete(status) }
+		}
+	}
+
+
 	private fun addSessionListener() {
 		sessionManager?.addSessionManagerListener(this)
-		if(isConnected()) {
-			sessionManager?.currentCastSession?.remoteMediaClient?.registerCallback(mRemoteMediaClientListener)
+		if (isConnected()) {
+			onSessionStarted(sessionManager!!.currentCastSession!!, "");
 		}
 	}
 
 	private fun removeSessionListener() {
 		sessionManager?.removeSessionManagerListener(this)
-		sessionManager?.currentCastSession?.remoteMediaClient?.unregisterCallback(mRemoteMediaClientListener)
+		sessionManager?.currentCastSession?.remoteMediaClient?.unregisterCallback(
+			mRemoteMediaClientListener
+		)
 	}
 
 	private val mRemoteMediaClientListener: RemoteMediaClient.Callback =
@@ -192,24 +283,18 @@ class ChromeCastController(
 			override fun onStatusUpdated() {
 				val mediaStatus: MediaStatus? =
 					sessionManager?.currentCastSession?.remoteMediaClient?.mediaStatus
-				val playerStatus: Int = mediaStatus?.playerState ?: MediaStatus.PLAYER_STATE_UNKNOWN
-				var retCode: Int = playerStatus
-				if (playerStatus == MediaStatus.PLAYER_STATE_PLAYING) {
-					retCode = 1
-				} else if (playerStatus == MediaStatus.PLAYER_STATE_BUFFERING) {
-					retCode = 0
-				} else if (playerStatus == MediaStatus.PLAYER_STATE_IDLE && mediaStatus?.getIdleReason() === MediaStatus.IDLE_REASON_FINISHED) {
-					retCode = 2
-				} else if (playerStatus == MediaStatus.PLAYER_STATE_PAUSED) {
-					retCode = 3
-				} else {
-					retCode = 4 //error or unkonwn
+				val retCode = when (mediaStatus?.playerState ?: MediaStatus.PLAYER_STATE_UNKNOWN) {
+					MediaStatus.PLAYER_STATE_BUFFERING -> 0
+					MediaStatus.PLAYER_STATE_PLAYING -> 1
+					MediaStatus.PLAYER_STATE_IDLE -> 2
+					MediaStatus.PLAYER_STATE_PAUSED -> 3
+					else -> if (mediaStatus?.idleReason === MediaStatus.IDLE_REASON_FINISHED) 2 else 4
 				}
 				channel.invokeMethod("chromeCast#didPlayerStatusUpdated", retCode)
 			}
 
 			override fun onMediaError(mediaError: MediaError) {
-				var errorCode: Int = mediaError.getDetailedErrorCode() ?: 100
+				val errorCode: Int = mediaError.detailedErrorCode ?: 100
 				channel.invokeMethod("chromeCast#didPlayerStatusUpdated", errorCode)
 			}
 		}
@@ -267,6 +352,27 @@ class ChromeCastController(
 				removeSessionListener()
 				result.success(null)
 			}
+			"chromeCast#getPlaybackRate" -> {
+				result.success(getPlaybackRate())
+			}
+			"chromeCast#setPlaybackRate" -> {
+				setPlaybackRate(call.arguments)
+				result.success(null)
+			}
+			"chromeCast#getSubtitleTrack" -> {
+				result.success(getSubtitleTrack())
+			}
+			"chromeCast#setSubtitleTrack" -> {
+				setSubtitleTrack(call.arguments)
+				result.success(null)
+			}
+			"chromeCast#getAudioTrack" -> {
+				result.success(getAudioTrackLang())
+			}
+			"chromeCast#setAudioTrack" -> {
+				setAudioTrack(call.arguments)
+				result.success(null)
+			}
 		}
 	}
 
@@ -274,7 +380,7 @@ class ChromeCastController(
 
 	override fun onSessionStarted(p0: Session, p1: String) {
 		if (p0 is CastSession) {
-			p0.remoteMediaClient?.registerCallback(mRemoteMediaClientListener);
+			p0.remoteMediaClient?.registerCallback(mRemoteMediaClientListener)
 		}
 		channel.invokeMethod("chromeCast#didStartSession", null)
 	}
@@ -314,8 +420,21 @@ class ChromeCastController(
 	// PendingResult.StatusListener
 
 	override fun onComplete(status: Status) {
-		if (status.isSuccess == true) {
+		if (status.isSuccess) {
 			channel.invokeMethod("chromeCast#requestDidComplete", null)
 		}
+	}
+}
+
+fun JSONObject.toMap(): Map<String, Any?> = keys().asSequence().associateWith { key ->
+	when (val value = this[key]) {
+		is JSONArray -> {
+			val map =
+				(0 until value.length()).associate { index -> Pair(index.toString(), value[index]) }
+			JSONObject(map).toMap().values.toList()
+		}
+		is JSONObject -> value.toMap()
+		JSONObject.NULL -> null
+		else -> value
 	}
 }

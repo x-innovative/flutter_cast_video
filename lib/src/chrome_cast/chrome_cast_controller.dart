@@ -106,9 +106,7 @@ class ChromeCastController {
       Map<String, dynamic> customData = const {},
       bool? live}) {
     return _chromeCastPlatform.loadMedia(url, title, subtitle, image,
-        id: id,
-        customData: customData,
-        live: live);
+        id: id, customData: customData, live: live);
   }
 
   /// Plays the video playback.
@@ -171,5 +169,29 @@ class ChromeCastController {
   /// Returns video duration.
   Future<Duration> duration() {
     return _chromeCastPlatform.duration(id: id);
+  }
+
+  Future<String?> getSubtitleLang() {
+    return _chromeCastPlatform.getSubtitleTrack(id: id);
+  }
+
+  Future<void> setSubtitleLang(String lang) {
+    return _chromeCastPlatform.setSubtitleTrack(lang, id: id);
+  }
+
+  Future<String?> getAudioLang() {
+    return _chromeCastPlatform.getAudioTrack(id: id);
+  }
+
+  Future<void> setAudioLang(String lang) {
+    return _chromeCastPlatform.setAudioTrack(lang, id: id);
+  }
+
+  Future<double?> getPlaybackRate() {
+    return _chromeCastPlatform.getPlaybackRate(id: id);
+  }
+
+  Future<void> setPlaybackRate(double rate) {
+    return _chromeCastPlatform.setPlaybackRate(rate, id: id);
   }
 }

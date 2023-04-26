@@ -35,7 +35,11 @@ class _CastSampleState extends State<CastSample> {
   late ChromeCastController _controller;
   AppState _state = AppState.idle;
   bool _playing = false;
+  double? _currentRate;
+  String? _currentAudioTrack;
+  String? _currentSubtitleTrack;
   Map<dynamic, dynamic> _mediaInfo = {};
+  List<String>? _audioTracks, _subtitleTracks;
 
   @override
   Widget build(BuildContext context) {
@@ -89,24 +93,96 @@ class _CastSampleState extends State<CastSample> {
 
   Widget _mediaControls() {
     return Column(children: [
-      Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          _RoundIconButton(
-            icon: Icons.replay_10,
-            onPressed: () => _controller.seek(relative: true, interval: -10.0),
-          ),
-          _RoundIconButton(
-              icon: _playing ? Icons.pause : Icons.play_arrow,
-              onPressed: _playPause),
-          _RoundIconButton(
-            icon: Icons.forward_10,
-            onPressed: () => _controller.seek(relative: true, interval: 10.0),
-          ),
-        ],
+      SizedBox(height: 20),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Wrap(
+          alignment: WrapAlignment.center,
+          children: <Widget>[
+            _RoundIconButton(
+              icon: Icons.replay_10,
+              onPressed: () =>
+                  _controller.seek(relative: true, interval: -10.0),
+            ),
+            _RoundIconButton(
+                icon: _playing ? Icons.pause : Icons.play_arrow,
+                onPressed: _playPause),
+            _RoundIconButton(
+              icon: Icons.forward_10,
+              onPressed: () => _controller.seek(relative: true, interval: 10.0),
+            ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text("Playback rate:   "),
+                DropdownButton<double>(
+                  value: _currentRate,
+                  items: [0.5, 0.75, 1.0, 1.25, 1.50, 1.75, 2.0]
+                          .map((rate) => DropdownMenuItem(
+                                value: rate,
+                                child: Text(rate.toString()),
+                              ))
+                          .toList() ??
+                      [],
+                  onChanged: (rate) {
+                    if (rate != null) {
+                      _controller.setPlaybackRate(rate);
+                    }
+                  },
+                )
+              ],
+            ),
+            if (_audioTracks?.isNotEmpty == true)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text("Audio Track:   "),
+                  DropdownButton<String>(
+                    value: _currentAudioTrack,
+                    items: _audioTracks
+                            ?.map((lang) => DropdownMenuItem(
+                                  value: lang,
+                                  child: Text(lang),
+                                ))
+                            .toList() ??
+                        [],
+                    onChanged: (lang) {
+                      if (lang != null) {
+                        _controller.setAudioLang(lang);
+                      }
+                    },
+                  )
+                ],
+              ),
+            if (_subtitleTracks?.isNotEmpty == true)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text("Subtitle Track:    "),
+                  DropdownButton<String>(
+                    value: _currentSubtitleTrack,
+                    items: _subtitleTracks
+                            ?.map((lang) => DropdownMenuItem(
+                                  value: lang,
+                                  child: Text(lang),
+                                ))
+                            .toList() ??
+                        [],
+                    onChanged: (lang) {
+                      if (lang != null) {
+                        _controller.setSubtitleLang(lang);
+                      }
+                    },
+                  )
+                ],
+              ),
+          ],
+        ),
       ),
+      SizedBox(height: 12),
       Text(duration2String(position) + '/' + duration2String(duration)),
-      Text(jsonEncode(_mediaInfo))
+      SizedBox(height: 40),
+      Text(JsonEncoder.withIndent("   ").convert(_mediaInfo))
     ]);
   }
 
@@ -164,25 +240,52 @@ class _CastSampleState extends State<CastSample> {
 
   Future<void> _onSessionStarted() async {
     setState(() => _state = AppState.connected);
-    await _controller.loadMedia(
-        'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-        title: "TestTitle",
-        subtitle: "test Sub title",
-        image:
-            "https://smaller-pictures.appspot.com/images/dreamstime_xxl_65780868_small.jpg");
+
+    if ((await _controller.isConnected() ?? false) &&
+        (await _controller.isPlaying() ?? false)) {
+      updateMediaInfo();
+    } else {
+      await _controller.loadMedia(
+          'https://livesim.dashif.org/dash/vod/testpic_2s/multi_subs.mpd',
+          // 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+          title: "TestTitle",
+          subtitle: "test Sub title",
+          image:
+              "https://smaller-pictures.appspot.com/images/dreamstime_xxl_65780868_small.jpg");
+    }
   }
 
   void _onSessionEnded() => setState(() => _state = AppState.idle);
 
   Future<void> _onRequestCompleted() async {
+    updateMediaInfo();
+  }
+
+  Future<void> updateMediaInfo() async {
     final playing = await _controller.isPlaying();
     if (playing == null) return;
+
     final mediaInfo = await _controller.getMediaInfo();
+    final rate = await _controller.getPlaybackRate();
+    final audioTrack = await _controller.getAudioLang();
+    final subtitleTrack = await _controller.getSubtitleLang();
     setState(() {
       _state = AppState.mediaLoaded;
+      _currentRate = rate;
+      _currentAudioTrack = audioTrack;
+      _currentSubtitleTrack = subtitleTrack;
       _playing = playing;
       if (mediaInfo != null) {
         _mediaInfo = mediaInfo;
+        _audioTracks = (mediaInfo["audioTracks"] as List<Object?>?)
+            ?.where((obj) => obj != null)
+            .map((obj) => obj.toString())
+            .toList();
+        _subtitleTracks = (mediaInfo["subtitleTracks"] as List<Object?>?)
+            ?.where((obj) => obj != null)
+            .map((obj) => obj.toString())
+            .toSet()
+            .toList();
       }
     });
   }

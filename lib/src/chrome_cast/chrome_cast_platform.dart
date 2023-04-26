@@ -129,6 +129,30 @@ abstract class ChromeCastPlatform {
     throw UnimplementedError('duration() has not been implemented.');
   }
 
+  Future<String?> getSubtitleTrack({required int id}) {
+    throw UnimplementedError('duration() has not been implemented.');
+  }
+
+  Future<void> setSubtitleTrack(String lang, {required int id}) {
+    throw UnimplementedError('duration() has not been implemented.');
+  }
+
+  Future<String?> getAudioTrack({required int id}) {
+    throw UnimplementedError('duration() has not been implemented.');
+  }
+
+  Future<void> setAudioTrack(String lang, {required int id}) {
+    throw UnimplementedError('duration() has not been implemented.');
+  }
+
+  Future<double?> getPlaybackRate({required int id}) {
+    throw UnimplementedError('duration() has not been implemented.');
+  }
+
+  Future<void> setPlaybackRate(double rate, {required int id}) {
+    throw UnimplementedError('duration() has not been implemented.');
+  }
+
   /// Returns a widget displaying the button.
   Widget buildView(Map<String, dynamic> arguments,
       PlatformViewCreatedCallback onPlatformViewCreated) {
