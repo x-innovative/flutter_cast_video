@@ -195,7 +195,7 @@ class MethodChannelChromeCast extends ChromeCastPlatform {
   @override
   Future<double?> getPlaybackRate({required int id}) async {
     return await channel(id)!
-        .invokeMethod<double>('chromeCast#getPlaybackRate');
+        .invokeMethod<double?>('chromeCast#getPlaybackRate');
   }
 
   @override

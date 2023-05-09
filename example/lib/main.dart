@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_cast_video/flutter_cast_video.dart';
@@ -33,6 +34,7 @@ class CastSample extends StatefulWidget {
 
 class _CastSampleState extends State<CastSample> {
   late ChromeCastController _controller;
+  late AirPlayController _airPlayController = AirPlayController();
   AppState _state = AppState.idle;
   bool _playing = false;
   double? _currentRate;
@@ -48,17 +50,25 @@ class _CastSampleState extends State<CastSample> {
         title: Text('Plugin example app'),
         actions: <Widget>[
           AirPlayButton(
-            size: CastSample._iconSize,
+            controller: _airPlayController,
+            size: 0,
             color: Colors.white,
             activeColor: Colors.amber,
             onRoutesOpening: () => print('opening'),
             onRoutesClosed: () => print('closed'),
           ),
           ChromeCastButton(
-            size: CastSample._iconSize,
+            size: 1, // can't be zero, otherwise button won't be create
             color: Colors.white,
             onButtonCreated: _onButtonCreated,
           ),
+          if (Platform.isIOS)
+            IconButton(
+                onPressed: () => _airPlayController.performClick(),
+                icon: Icon(Icons.airplay)),
+          IconButton(
+              onPressed: () => _controller.performClick(),
+              icon: Icon(Icons.cast))
         ],
       ),
       body: Center(child: _handleState()),
