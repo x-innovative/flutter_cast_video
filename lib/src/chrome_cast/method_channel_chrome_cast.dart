@@ -76,15 +76,14 @@ class MethodChannelChromeCast extends ChromeCastPlatform {
   }
 
   @override
-  Future<void> loadMedia(
-    String url,
-    String title,
-    String subtitle,
-    String image, {
-    bool? live,
-    Map<String, dynamic> customData = const {},
-    required int id,
-  }) {
+  Future<void> loadMedia(String url,
+      String title,
+      String subtitle,
+      String image, {
+        bool? live,
+        Map<String, dynamic> customData = const {},
+        required int id,
+      }) {
     final Map<String, dynamic> args = {
       'url': url,
       'title': title,
@@ -157,7 +156,7 @@ class MethodChannelChromeCast extends ChromeCastPlatform {
   Future<Duration> position({required int id}) async {
     return Duration(
       milliseconds:
-          (await channel(id)!.invokeMethod<int>('chromeCast#position')) ?? 0,
+      (await channel(id)!.invokeMethod<int>('chromeCast#position')) ?? 0,
     );
   }
 
@@ -165,14 +164,14 @@ class MethodChannelChromeCast extends ChromeCastPlatform {
   Future<Duration> duration({required int id}) async {
     return Duration(
       milliseconds:
-          (await channel(id)!.invokeMethod<int>('chromeCast#duration')) ?? 0,
+      (await channel(id)!.invokeMethod<int>('chromeCast#duration')) ?? 0,
     );
   }
 
   @override
   Future<String?> getSubtitleTrack({required int id}) async {
     return await channel(id)!
-            .invokeMethod<String?>('chromeCast#getSubtitleTrack');
+        .invokeMethod<String?>('chromeCast#getSubtitleTrack');
   }
 
   @override
@@ -184,7 +183,7 @@ class MethodChannelChromeCast extends ChromeCastPlatform {
   @override
   Future<String?> getAudioTrack({required int id}) async {
     return await channel(id)!
-            .invokeMethod<String>('chromeCast#getAudioTrack');
+        .invokeMethod<String>('chromeCast#getAudioTrack');
   }
 
   @override
@@ -196,13 +195,19 @@ class MethodChannelChromeCast extends ChromeCastPlatform {
   @override
   Future<double?> getPlaybackRate({required int id}) async {
     return await channel(id)!
-            .invokeMethod<double>('chromeCast#getPlaybackRate');
+        .invokeMethod<double>('chromeCast#getPlaybackRate');
   }
 
   @override
   Future<void> setPlaybackRate(double rate, {required int id}) {
     return channel(id)!
         .invokeMethod<void>('chromeCast#setPlaybackRate', {"rate": rate});
+  }
+
+  @override
+  Future<void> performClick({required int id}) {
+    return channel(id)!
+        .invokeMethod<void>('chromeCast#performClick');
   }
 
   Future<dynamic> _handleMethodCall(MethodCall call, int id) async {

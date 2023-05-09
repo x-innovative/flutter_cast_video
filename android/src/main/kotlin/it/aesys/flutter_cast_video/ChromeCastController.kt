@@ -3,6 +3,7 @@ package it.aesys.flutter_cast_video
 import android.content.Context
 import android.net.Uri
 import android.view.ContextThemeWrapper
+import android.view.View
 import androidx.mediarouter.app.MediaRouteButton
 import com.google.android.gms.cast.*
 import com.google.android.gms.cast.framework.*
@@ -29,6 +30,7 @@ class ChromeCastController(
 
 	init {
 		CastButtonFactory.setUpMediaRouteButton(context as Context, chromeCastButton)
+		chromeCastButton.visibility = View.GONE
 		channel.setMethodCallHandler(this)
 	}
 
@@ -371,6 +373,10 @@ class ChromeCastController(
 			}
 			"chromeCast#setAudioTrack" -> {
 				setAudioTrack(call.arguments)
+				result.success(null)
+			}
+			"chromeCast#performClick" -> {
+				chromeCastButton.performClick()
 				result.success(null)
 			}
 		}

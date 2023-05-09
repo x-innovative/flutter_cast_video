@@ -2,15 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_cast_video/src/chrome_cast/chrome_cast_event.dart';
 import 'package:flutter_cast_video/src/chrome_cast/method_channel_chrome_cast.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 /// The interface that platform-specific implementations of `flutter_cast_video` must extend.
-abstract class ChromeCastPlatform {
+abstract class ChromeCastPlatform extends PlatformInterface {
+  /// Constructs a KktvFlutterPlayerPlatform.
+  ChromeCastPlatform() : super(token: _token);
+
+  static final Object _token = Object();
+
   static ChromeCastPlatform _instance = MethodChannelChromeCast();
 
   /// The default instance of [ChromeCastPlatform] to use.
   ///
   /// Defaults to [MethodChannelChromeCast].
-  static get instance => _instance;
+  static ChromeCastPlatform get instance => _instance;
+
+  /// Platform-specific implementations should set this with their own
+  /// platform-specific class that extends [ChromeCastPlatform] when
+  /// they register themselves.
+  static set instance(ChromeCastPlatform instance) {
+    PlatformInterface.verifyToken(instance, _token);
+    _instance = instance;
+  }
 
   /// Initializes the platform interface with [id].
   ///
@@ -57,15 +71,14 @@ abstract class ChromeCastPlatform {
   }
 
   /// Load a new media by providing an [url].
-  Future<void> loadMedia(
-    String url,
-    String title,
-    String subtitle,
-    String image, {
-    bool? live,
-    Map<String, dynamic> customData = const {},
-    required int id,
-  }) {
+  Future<void> loadMedia(String url,
+      String title,
+      String subtitle,
+      String image, {
+        bool? live,
+        Map<String, dynamic> customData = const {},
+        required int id,
+      }) {
     throw UnimplementedError('loadMedia() has not been implemented.');
   }
 
@@ -150,6 +163,10 @@ abstract class ChromeCastPlatform {
   }
 
   Future<void> setPlaybackRate(double rate, {required int id}) {
+    throw UnimplementedError('duration() has not been implemented.');
+  }
+
+  Future<void> performClick({required int id}) {
     throw UnimplementedError('duration() has not been implemented.');
   }
 

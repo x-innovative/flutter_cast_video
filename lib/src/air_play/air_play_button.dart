@@ -2,17 +2,25 @@ part of flutter_cast_video;
 
 final AirPlayPlatform _airPlayPlatform = AirPlayPlatform.instance;
 
+class AirPlayController {
+  var _id;
+
+  Future<void> performClick() {
+    return _airPlayPlatform.performClick(id: _id);
+  }
+}
+
 /// Widget that displays the AirPlay button.
 class AirPlayButton extends StatelessWidget {
   /// Creates a widget displaying a AirPlay button.
-  AirPlayButton(
-      {Key? key,
-      this.size = 30.0,
-      this.color = Colors.black,
-      this.activeColor = Colors.white,
-      this.onRoutesOpening,
-      this.onRoutesClosed,
-      this.onPlayerStateChanged})
+  AirPlayButton({Key? key,
+    this.controller,
+    this.size = 30.0,
+    this.color = Colors.black,
+    this.activeColor = Colors.white,
+    this.onRoutesOpening,
+    this.onRoutesClosed,
+    this.onPlayerStateChanged})
       : super(key: key);
 
   /// The size of the button.
@@ -31,6 +39,8 @@ class AirPlayButton extends StatelessWidget {
   final VoidCallback? onRoutesClosed;
 
   final Function? onPlayerStateChanged;
+
+  final AirPlayController? controller;
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +66,9 @@ class AirPlayButton extends StatelessWidget {
 
   Future<void> _onPlatformViewCreated(int id) async {
     await _airPlayPlatform.init(id);
+
+    controller?._id = id;
+
     if (onRoutesOpening != null) {
       _airPlayPlatform
           .onRoutesOpening(id: id)

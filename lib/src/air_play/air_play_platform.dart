@@ -38,4 +38,8 @@ abstract class AirPlayPlatform {
   Stream<AirplayStateChangedEvent> isAirplayConnected({required int id}) {
     throw UnimplementedError("isAirplayConnect() has not been implemented");
   }
+  
+  Future<void> performClick({required int id}) {
+    throw UnimplementedError('duration() has not been implemented.');
+  }
 }

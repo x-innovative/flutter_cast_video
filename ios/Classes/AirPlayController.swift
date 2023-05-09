@@ -96,6 +96,12 @@ public class AirPlayController: NSObject, FlutterPlatformView {
         case "airPlay#isConnected":
             result(isConnected())
             break
+        case "airPlay#performClick":
+            if let airPlayButton = airPlayButton.subviews.first(where: { $0 is UIButton }) as? UIButton {
+                airPlayButton.sendActions(for: .touchUpInside)
+            }
+            result(nil)
+            break
         default:
             break
         }
