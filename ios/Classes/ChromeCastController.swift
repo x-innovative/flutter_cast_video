@@ -222,6 +222,9 @@ class ChromeCastController: NSObject, FlutterPlatformView {
         case "chromeCast#setSubtitleTrack":
             setSubtitleTrack(args: call.arguments)
             result(nil)
+        case "chromeCast#performClick":
+            chromeCastButton.sendActions(for: .touchUpInside)
+            result(nil)
         default:
             result(nil)
             break
