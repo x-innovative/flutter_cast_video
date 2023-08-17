@@ -17,6 +17,7 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.platform.PlatformView
 import org.json.JSONArray
 import org.json.JSONObject
+import java.lang.Exception
 
 
 class ChromeCastController(
@@ -26,12 +27,15 @@ class ChromeCastController(
 	private val channel = MethodChannel(messenger, "flutter_cast_video/chromeCast_$viewId")
 	private val chromeCastButton =
 		MediaRouteButton(ContextThemeWrapper(context, R.style.Theme_AppCompat_NoActionBar))
-	private val sessionManager = CastContext.getSharedInstance()?.sessionManager
+	private var sessionManager : SessionManager? = null
 
 	init {
 		CastButtonFactory.setUpMediaRouteButton(context as Context, chromeCastButton)
 		chromeCastButton.visibility = View.GONE
 		channel.setMethodCallHandler(this)
+		try {
+			sessionManager = CastContext.getSharedInstance()?.sessionManager
+		} catch (ignored: Exception){}
 	}
 
 	private fun loadMedia(args: Any?) {
@@ -188,7 +192,7 @@ class ChromeCastController(
 	private fun getSubtitleTrack() =
 		sessionManager?.currentCastSession?.remoteMediaClient?.mediaInfo?.mediaTracks?.filter { track -> track.type == MediaTrack.TYPE_TEXT || track.subtype == MediaTrack.SUBTYPE_SUBTITLES }
 			?.let { tracks ->
-				sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.activeTrackIds?.toList()
+				sessionManager?.currentCastSession?.remoteMediaClient?.mediaStatus?.activeTrackIds?.toList()
 					?.let { ids ->
 						tracks.firstOrNull { track -> ids.contains(track.id) }?.language
 					}
@@ -198,7 +202,7 @@ class ChromeCastController(
 	private fun getAudioTrackLang() =
 		sessionManager?.currentCastSession?.remoteMediaClient?.mediaInfo?.mediaTracks?.filter { track -> track.type == MediaTrack.TYPE_AUDIO }
 			?.let { tracks ->
-				sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.activeTrackIds?.toList()
+				sessionManager?.currentCastSession?.remoteMediaClient?.mediaStatus?.activeTrackIds?.toList()
 					?.let { ids ->
 						tracks.firstOrNull { track -> ids.contains(track.id) }?.language ?: ""
 					}
@@ -212,12 +216,12 @@ class ChromeCastController(
 					if (tracks.isNotEmpty()) {
 						tracks.firstOrNull { track -> track.language == lang }?.also { track ->
 
-							(sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.activeTrackIds?.toMutableList()
+							(sessionManager?.currentCastSession?.remoteMediaClient?.mediaStatus?.activeTrackIds?.toMutableList()
 								?: mutableListOf()).also { ids ->
 								ids.removeAll(tracks.map { track -> track.id }.toSet())
 								ids.add(track.id)
 
-								sessionManager.currentCastSession?.remoteMediaClient?.apply {
+								sessionManager?.currentCastSession?.remoteMediaClient?.apply {
 									setActiveMediaTracks(
 										ids.toLongArray()
 									).addStatusListener { status -> onComplete(status) }
@@ -237,12 +241,12 @@ class ChromeCastController(
 					if (tracks.isNotEmpty()) {
 						tracks.firstOrNull { track -> track.language == lang }?.also { track ->
 
-							(sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.activeTrackIds?.toMutableList()
+							(sessionManager?.currentCastSession?.remoteMediaClient?.mediaStatus?.activeTrackIds?.toMutableList()
 								?: mutableListOf()).also { ids ->
 								ids.removeAll(tracks.map { track -> track.id }.toSet())
 								ids.add(track.id)
 
-								sessionManager.currentCastSession?.remoteMediaClient?.apply {
+								sessionManager?.currentCastSession?.remoteMediaClient?.apply {
 									setActiveMediaTracks(
 										ids.toLongArray()
 									).addStatusListener { status -> onComplete(status) }
