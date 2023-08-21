@@ -6,16 +6,19 @@
 //
 
 import Flutter
+#if canImport(GoogleCast)
 import GoogleCast
+#endif
 
 class ChromeCastController: NSObject, FlutterPlatformView {
     
     // MARK: - Internal properties
     
     private let channel: FlutterMethodChannel
+#if canImport(GoogleCast)
     private let chromeCastButton: GCKUICastButton
     private let sessionManager = GCKCastContext.sharedInstance().sessionManager
-    
+#endif
     // MARK: - Init
     
     init(
@@ -25,13 +28,19 @@ class ChromeCastController: NSObject, FlutterPlatformView {
         registrar: FlutterPluginRegistrar
     ) {
         self.channel = FlutterMethodChannel(name: "flutter_cast_video/chromeCast_\(viewId)", binaryMessenger: registrar.messenger())
+#if canImport(GoogleCast)
         self.chromeCastButton = GCKUICastButton(frame: frame)
+#endif
         super.init()
         self.configure(arguments: args)
     }
     
     func view() -> UIView {
+#if canImport(GoogleCast)
         return chromeCastButton
+#else
+        return UIView()
+#endif
     }
     
     private func configure(arguments args: Any?) {
@@ -51,12 +60,14 @@ class ChromeCastController: NSObject, FlutterPlatformView {
             print("Invalid color")
             return
         }
+#if canImport(GoogleCast)
         chromeCastButton.tintColor = UIColor(
             red: red / 255,
             green: green / 255,
             blue: blue / 255,
             alpha: CGFloat(alpha) / 255
         )
+#endif
     }
     
     // MARK: - Flutter methods handling
@@ -68,6 +79,7 @@ class ChromeCastController: NSObject, FlutterPlatformView {
     }
     
     private func setVolume(args: Any?) {
+#if canImport(GoogleCast)
         guard
             let args = args as? [String: Any],
             let volume = args["volume"] as? Float,
@@ -75,13 +87,19 @@ class ChromeCastController: NSObject, FlutterPlatformView {
             return
         }
         client.setStreamVolume(volume);
+#endif
     }
-
+    
     private func getPlaybackRate() -> Float? {
+#if canImport(GoogleCast)
         return sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.playbackRate
+#else
+        return 1.0
+#endif
     }
-
+    
     private func setPlaybackRate(args: Any?) {
+#if canImport(GoogleCast)
         guard
             let args = args as? [String: Any],
             let rate = args["rate"] as? Float,
@@ -89,9 +107,11 @@ class ChromeCastController: NSObject, FlutterPlatformView {
             return
         }
         client.setPlaybackRate(rate).delegate = self
+#endif
     }
     
     private func getAudioTrack() -> String? {
+#if canImport(GoogleCast)
         guard
             let client = sessionManager.currentCastSession?.remoteMediaClient,
             let tracks = client.mediaStatus?.mediaInformation?.mediaTracks?.filter({(track) -> Bool in track.type == GCKMediaTrackType.audio }),
@@ -103,9 +123,13 @@ class ChromeCastController: NSObject, FlutterPlatformView {
         return tracks.first { track in
             ids.contains(track.identifier as NSNumber)
         }?.languageCode
+#else
+        return nil
+#endif
     }
-
+    
     private func setAudioTrack(args: Any?) {
+#if canImport(GoogleCast)
         guard
             let args = args as? [String: Any],
             let lang = args["lang"] as? String,
@@ -122,9 +146,11 @@ class ChromeCastController: NSObject, FlutterPlatformView {
         var ids = client.mediaStatus?.activeTrackIDs?.filter{id in !trackIds.contains(Int(truncating: id))} ?? []
         ids.append(selectedTrackId)
         client.setActiveTrackIDs(ids).delegate = self
+#endif
     }
     
     private func getSubtitleTrack() -> String? {
+#if canImport(GoogleCast)
         guard
             let client = sessionManager.currentCastSession?.remoteMediaClient,
             let tracks = client.mediaStatus?.mediaInformation?.mediaTracks?.filter({(track) -> Bool in track.type == GCKMediaTrackType.text }),
@@ -136,9 +162,13 @@ class ChromeCastController: NSObject, FlutterPlatformView {
         return tracks.first { track in
             ids.contains(track.identifier as NSNumber)
         }?.languageCode
+#else
+        return nil
+#endif
     }
     
     private func setSubtitleTrack(args: Any?) {
+#if canImport(GoogleCast)
         guard
             let args = args as? [String: Any],
             let lang = args["lang"] as? String,
@@ -155,10 +185,12 @@ class ChromeCastController: NSObject, FlutterPlatformView {
         var ids = client.mediaStatus?.activeTrackIDs?.filter{id in !trackIds.contains(Int(truncating: id))} ?? []
         ids.append(selectedTrackId)
         client.setActiveTrackIDs(ids).delegate = self
+#endif
     }
     
     
     private func onMethodCall(call: FlutterMethodCall, result: FlutterResult) {
+#if canImport(GoogleCast)
         switch call.method {
         case "chromeCast#wait":
             result(nil)
@@ -229,9 +261,13 @@ class ChromeCastController: NSObject, FlutterPlatformView {
             result(nil)
             break
         }
+#else
+        result(nil)
+#endif
     }
     
     private func loadMedia(args: Any?) {
+#if canImport(GoogleCast)
         guard
             let args = args as? [String: Any],
             let url = args["url"] as? String,
@@ -245,7 +281,7 @@ class ChromeCastController: NSObject, FlutterPlatformView {
         let _image = args["image"] as? String
         let live = args["live"] as? Bool
         let customData = args["customData"] as? [AnyHashable: AnyHashable]
-
+        
         let movieMetadata = GCKMediaMetadata()
         
         if let title = _title {
@@ -275,21 +311,27 @@ class ChromeCastController: NSObject, FlutterPlatformView {
         if let request = sessionManager.currentCastSession?.remoteMediaClient?.loadMedia(mediaInformation) {
             request.delegate = self
         }
+#endif
     }
     
     private func play() {
+#if canImport(GoogleCast)
         if let request = sessionManager.currentCastSession?.remoteMediaClient?.play() {
             request.delegate = self
         }
+#endif
     }
     
     private func pause() {
+#if canImport(GoogleCast)
         if let request = sessionManager.currentCastSession?.remoteMediaClient?.pause() {
             request.delegate = self
         }
+#endif
     }
     
     private func seek(args: Any?) {
+#if canImport(GoogleCast)
         guard
             let args = args as? [String: Any],
             let relative = args["relative"] as? Bool,
@@ -302,18 +344,26 @@ class ChromeCastController: NSObject, FlutterPlatformView {
         if let request = sessionManager.currentCastSession?.remoteMediaClient?.seek(with: seekOptions) {
             request.delegate = self
         }
+#endif
     }
     
     private func stop() {
+#if canImport(GoogleCast)
         if let request = sessionManager.currentCastSession?.remoteMediaClient?.stop() {
             request.delegate = self
         }
+#endif
     }
     
     private func getMediaInfo() -> [String: AnyHashable?]? {
+#if canImport(GoogleCast)
         return  mediaInfoToMap(_mediaInfo: sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.mediaInformation)
+#else
+        return nil
+#endif
     }
     
+#if canImport(GoogleCast)
     private func mediaInfoToMap(_mediaInfo: GCKMediaInformation?) -> [String: AnyHashable?]? {
         var info = [String: AnyHashable?]()
         if let mediaInfo = _mediaInfo {
@@ -351,39 +401,60 @@ class ChromeCastController: NSObject, FlutterPlatformView {
         }
         return info;
     }
+#endif
     
     private func isConnected() -> Bool {
+#if canImport(GoogleCast)
         return sessionManager.currentCastSession?.remoteMediaClient?.connected ?? false
+#else
+        return false
+#endif
     }
     
     private func isPlaying() -> Bool {
+#if canImport(GoogleCast)
         return sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.playerState == GCKMediaPlayerState.playing
+#else
+        return false
+#endif
     }
     
     private func addSessionListener() {
+#if canImport(GoogleCast)
         sessionManager.add(self)
         if(isConnected()) {
             sessionManager.currentCastSession?.remoteMediaClient?.add(self)
             channel.invokeMethod("chromeCast#didStartSession", arguments: nil)
         }
+#endif
     }
     
     private func removeSessionListener() {
+#if canImport(GoogleCast)
         sessionManager.remove(self)
+#endif
     }
     
     private func position() -> Int {
+#if canImport(GoogleCast)
         return Int(sessionManager.currentCastSession?.remoteMediaClient?.approximateStreamPosition() ?? 0) * 1000
+#else
+        return 0
+#endif
     }
     
     private func duration() -> Int {
+#if canImport(GoogleCast)
         return Int(sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.mediaInformation?.streamDuration ?? 0) * 1000
+#else
+        return 0
+#endif
     }
     
 }
 
+#if canImport(GoogleCast)
 // MARK: - GCKSessionManagerListener
-
 extension ChromeCastController: GCKSessionManagerListener {
     func sessionManager(_ sessionManager: GCKSessionManager, didStart session: GCKSession) {
         session.remoteMediaClient?.add(self)
@@ -425,3 +496,4 @@ extension ChromeCastController : GCKRemoteMediaClientListener {
         channel.invokeMethod("chromeCast#didPlayerStatusUpdated", arguments: retCode)
     }
 }
+#endif
