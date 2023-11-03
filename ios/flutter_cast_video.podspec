@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'flutter_cast_video'
-  s.version          = '0.0.1'
+  s.version          = '0.0.3'
   s.summary          = 'A new flutter plugin project.'
   s.description      = <<-DESC
 A new flutter plugin project.
@@ -15,8 +15,8 @@ A new flutter plugin project.
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
   s.dependency 'Flutter'
-  s.dependency 'google-cast-sdk-no-bluetooth'
-  s.platform = :ios, '11.0'
+  s.ios.dependency 'google-cast-sdk-no-bluetooth'
+  s.platforms = { :ios => "11.0", :tvos => "12.0" }
   s.static_framework = true
 
   # Flutter.framework does not contain a i386 slice. Only x86_64 simulators are supported.

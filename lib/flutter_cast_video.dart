@@ -1,7 +1,5 @@
 library flutter_cast_video;
 
-import 'dart:developer';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 

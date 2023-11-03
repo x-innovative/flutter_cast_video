@@ -28,3 +28,7 @@
 
 * Add get MediaInfo method
 * add iOS duration function 
+
+## 1.2.2
+
+* Make library buildable on tvOS
