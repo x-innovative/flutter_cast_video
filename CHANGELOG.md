@@ -36,3 +36,7 @@
 ## 1.2.3
 
 * Upgrade Android cast library to 21.4.0
+
+## 1.2.4
+
+* Downgrade material library to 1.10.0 
