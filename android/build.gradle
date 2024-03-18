@@ -3,14 +3,14 @@ version '1.2-ENABLEMEDIA'
 
 buildscript {
     ext.kotlinVersion = "1.7.0"
-    ext.gradleVersion = "7.3.1"
+    ext.gradleVersion = "7.4.2"
     repositories {
         google()
         mavenCentral()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.3.1'
+        classpath "com.android.tools.build:gradle:$gradleVersion"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
     }
 }
@@ -26,7 +26,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion 34
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
@@ -37,11 +37,12 @@ android {
     lintOptions {
         disable 'InvalidPackage'
     }
+    namespace 'it.aesys.flutter_cast_video'
 }
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
     //ChromeCast dependencies
-    implementation 'com.google.android.material:material:1.6.1'
-    implementation 'com.google.android.gms:play-services-cast-framework:21.0.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'com.google.android.gms:play-services-cast-framework:21.4.0'
 }

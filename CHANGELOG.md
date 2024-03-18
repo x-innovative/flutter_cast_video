@@ -32,3 +32,7 @@
 ## 1.2.2
 
 * Make library buildable on tvOS
+
+## 1.2.3
+
+* Upgrade Android cast library to 21.4.0
