@@ -53,3 +53,6 @@
 
 * add support no subtitle
 
+## 1.2.8
+
+* fix swift error

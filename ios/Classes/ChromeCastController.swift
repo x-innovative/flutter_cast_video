@@ -181,13 +181,17 @@ class ChromeCastController: NSObject, FlutterPlatformView {
         if lang.isEmpty {
             client.setActiveTrackIDs([]).delegate = self
         } else {
-            let selectedTrackId = tracks.first(where: {track in track.languageCode == lang})?.identifier as NSNumber?
+            guard let selectedTrackId = tracks.first(where: {track in track.languageCode == lang})?.identifier as NSNumber? else {
+                return
+            }
+            
             let trackIds = tracks.map({ track in
                 track.identifier
             })
             var ids = client.mediaStatus?.activeTrackIDs?.filter{id in !trackIds.contains(Int(truncating: id))} ?? []
             ids.append(selectedTrackId)
             client.setActiveTrackIDs(ids).delegate = self
+
         }
 #endif
     }
