@@ -213,10 +213,10 @@ class ChromeCastController(
 		(this["lang"] as String?)?.let { lang ->
 			sessionManager?.currentCastSession?.remoteMediaClient?.mediaInfo?.mediaTracks?.filter { track -> track.type == MediaTrack.TYPE_TEXT || track.subtype == MediaTrack.SUBTYPE_SUBTITLES }
 				?.also { tracks ->
-					if(lang.isEmpty) {
+					if(lang.isEmpty()) {
 						sessionManager?.currentCastSession?.remoteMediaClient?.apply {
 							setActiveMediaTracks(
-								emptyArray<Long>()
+								LongArray(0)
 							).addStatusListener { status -> onComplete(status) }
 						}
 					} else if (tracks.isNotEmpty()) {

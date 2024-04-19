@@ -56,3 +56,11 @@
 ## 1.2.8
 
 * fix swift error
+
+# 1.2.9
+
+* fix kotlin error
+
+# 1.2.10
+
+* fix kotlin error
