@@ -156,7 +156,7 @@ class ChromeCastController: NSObject, FlutterPlatformView {
             let tracks = client.mediaStatus?.mediaInformation?.mediaTracks?.filter({(track) -> Bool in track.type == GCKMediaTrackType.text }),
             let ids = sessionManager.currentCastSession?.remoteMediaClient?.mediaStatus?.activeTrackIDs
         else {
-            return nil
+            return ""
         }
         
         return tracks.first { track in
@@ -173,18 +173,22 @@ class ChromeCastController: NSObject, FlutterPlatformView {
             let args = args as? [String: Any],
             let lang = args["lang"] as? String,
             let client = sessionManager.currentCastSession?.remoteMediaClient,
-            let tracks = client.mediaStatus?.mediaInformation?.mediaTracks?.filter({(track) -> Bool in track.type == GCKMediaTrackType.text }),
-            let selectedTrackId = tracks.first(where: {track in track.languageCode == lang})?.identifier as NSNumber?
+            let tracks = client.mediaStatus?.mediaInformation?.mediaTracks?.filter({(track) -> Bool in track.type == GCKMediaTrackType.text })
         else {
             return
         }
-        
-        let trackIds = tracks.map({ track in
-            track.identifier
-        })
-        var ids = client.mediaStatus?.activeTrackIDs?.filter{id in !trackIds.contains(Int(truncating: id))} ?? []
-        ids.append(selectedTrackId)
-        client.setActiveTrackIDs(ids).delegate = self
+
+        if lang.isEmpty {
+            client.setActiveTrackIDs([]).delegate = self
+        } else {
+            let selectedTrackId = tracks.first(where: {track in track.languageCode == lang})?.identifier as NSNumber?
+            let trackIds = tracks.map({ track in
+                track.identifier
+            })
+            var ids = client.mediaStatus?.activeTrackIDs?.filter{id in !trackIds.contains(Int(truncating: id))} ?? []
+            ids.append(selectedTrackId)
+            client.setActiveTrackIDs(ids).delegate = self
+        }
 #endif
     }
     

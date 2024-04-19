@@ -194,7 +194,7 @@ class ChromeCastController(
 			?.let { tracks ->
 				sessionManager?.currentCastSession?.remoteMediaClient?.mediaStatus?.activeTrackIds?.toList()
 					?.let { ids ->
-						tracks.firstOrNull { track -> ids.contains(track.id) }?.language
+						tracks.firstOrNull { track -> ids.contains(track.id) }?.language ?: ""
 					}
 
 			}
@@ -213,7 +213,13 @@ class ChromeCastController(
 		(this["lang"] as String?)?.let { lang ->
 			sessionManager?.currentCastSession?.remoteMediaClient?.mediaInfo?.mediaTracks?.filter { track -> track.type == MediaTrack.TYPE_TEXT || track.subtype == MediaTrack.SUBTYPE_SUBTITLES }
 				?.also { tracks ->
-					if (tracks.isNotEmpty()) {
+					if(lang.isEmpty) {
+						sessionManager?.currentCastSession?.remoteMediaClient?.apply {
+							setActiveMediaTracks(
+								emptyArray<Long>()
+							).addStatusListener { status -> onComplete(status) }
+						}
+					} else if (tracks.isNotEmpty()) {
 						tracks.firstOrNull { track -> track.language == lang }?.also { track ->
 
 							(sessionManager?.currentCastSession?.remoteMediaClient?.mediaStatus?.activeTrackIds?.toMutableList()

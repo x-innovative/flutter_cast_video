@@ -49,3 +49,7 @@
 
 * Downgrade Android cast library to 21.0.0
 
+## 1.2.7
+
+* add support no subtitle
+
