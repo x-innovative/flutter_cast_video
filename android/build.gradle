@@ -2,7 +2,7 @@ group 'it.aesys.flutter_cast_video'
 version '1.2-ENABLEMEDIA'
 
 buildscript {
-    ext.kotlinVersion = "1.7.0"
+    ext.kotlinVersion = "1.8.22"
     ext.gradleVersion = "7.4.2"
     repositories {
         google()
@@ -26,7 +26,7 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdkVersion 33
+    compileSdkVersion 34
 
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
