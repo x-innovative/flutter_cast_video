@@ -128,11 +128,11 @@ class ChromeCastController {
       title,
       subtitle,
       image,
+      contentType,
+      hlsVideoSegmentFormat,
       id: id,
       customData: customData,
       live: live,
-      contentType: contentType,
-      hlsVideoSegmentFormat: hlsVideoSegmentFormat,
     );
   }
 
