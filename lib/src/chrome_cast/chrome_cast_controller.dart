@@ -34,8 +34,7 @@ class ChromeCastController {
   /// Initialize control of a [ChromeCastButton] with [id].
   static Future<ChromeCastController> init(int id) async {
     await _chromeCastPlatform.init(id);
-    return ChromeCastController._(id: id)
-      ..addSessionListener();
+    return ChromeCastController._(id: id)..addSessionListener();
   }
 
   /// Add listener for receive callbacks.
@@ -45,12 +44,11 @@ class ChromeCastController {
       ..onSessionEnded(id: id).listen(notifySessionEndedListeners)
       ..onRequestCompleted(id: id).listen(notifyRequestCompletedListeners)
       ..onRequestFailed(id: id).listen(notifyRequestFailedListeners)
-      ..onPlayerStatusUpdated(id: id).listen(notifyPlayerStatusUpdatedListeners
-      );
+      ..onPlayerStatusUpdated(id: id)
+          .listen(notifyPlayerStatusUpdatedListeners);
 
     return _chromeCastPlatform.addSessionListener(id: id);
   }
-
 
   @visibleForTesting
   void notifySessionStartedListeners(_) =>
@@ -66,17 +64,14 @@ class ChromeCastController {
 
   @visibleForTesting
   void notifyRequestFailedListeners(event) =>
-      _onRequestFailedListeners
-          .forEach((listener) => listener(event.error));
+      _onRequestFailedListeners.forEach((listener) => listener(event.error));
 
   @visibleForTesting
   void notifyPlayerStatusUpdatedListeners(event) =>
-      _onPlayerStatusUpdatedListeners.forEach((listener) =>
-          listener(
-              CastPlayerStatus.values.firstWhere(
-                      (status) => status.index == event.status,
-                  orElse: () => CastPlayerStatus.unknown)));
-
+      _onPlayerStatusUpdatedListeners.forEach((listener) => listener(
+          CastPlayerStatus.values.firstWhere(
+              (status) => status.index == event.status,
+              orElse: () => CastPlayerStatus.unknown)));
 
   /// Remove listener for receive callbacks.
   Future<void> removeSessionListener() {
@@ -122,12 +117,23 @@ class ChromeCastController {
   /// Load a new media by providing an [url].
   Future<void> loadMedia(String url,
       {String title = '',
-        String subtitle = '',
-        String image = '',
-        Map<String, dynamic> customData = const {},
-        bool? live}) {
-    return _chromeCastPlatform.loadMedia(url, title, subtitle, image,
-        id: id, customData: customData, live: live);
+      String subtitle = '',
+      String image = '',
+      String contentType = '',
+      int hlsVideoSegmentFormat = 0,
+      Map<String, dynamic> customData = const {},
+      bool? live}) {
+    return _chromeCastPlatform.loadMedia(
+      url,
+      title,
+      subtitle,
+      image,
+      id: id,
+      customData: customData,
+      live: live,
+      contentType: contentType,
+      hlsVideoSegmentFormat: hlsVideoSegmentFormat,
+    );
   }
 
   /// Plays the video playback.

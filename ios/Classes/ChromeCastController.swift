@@ -288,6 +288,8 @@ class ChromeCastController: NSObject, FlutterPlatformView {
         let _subtitle = args["subtitle"] as? String
         let _image = args["image"] as? String
         let live = args["live"] as? Bool
+        let contentType = args["contentType"] as? String ?? "video/mp4"
+        let hlsVideoSegmentFormat = args["hlsVideoSegmentFormat"] as? Int ?? 0
         let customData = args["customData"] as? [AnyHashable: AnyHashable]
         
         let movieMetadata = GCKMediaMetadata()
@@ -305,15 +307,22 @@ class ChromeCastController: NSObject, FlutterPlatformView {
         }
         
         let mediaInfoBuilder = GCKMediaInformationBuilder.init(contentURL: mediaUrl)
+        
         mediaInfoBuilder.streamType = .buffered
+        // 
+        mediaInfoBuilder.contentType = contentType
+        //
+        mediaInfoBuilder.hlsVideoSegmentFormat = GCKHLSVideoSegmentFormat(rawValue: hlsVideoSegmentFormat) ?? .FMP4
+        // 
+        mediaInfoBuilder.customData = customData
+
+        // 
         if let islive = live {
             if islive {
                 mediaInfoBuilder.streamType = .live
             }
         }
-        mediaInfoBuilder.contentType = "video/mp4"
-        mediaInfoBuilder.metadata = movieMetadata
-        mediaInfoBuilder.customData = customData
+        
         let mediaInformation = mediaInfoBuilder.build()
         
         if let request = sessionManager.currentCastSession?.remoteMediaClient?.loadMedia(mediaInformation) {

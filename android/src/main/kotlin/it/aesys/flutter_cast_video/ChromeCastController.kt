@@ -45,9 +45,11 @@ class ChromeCastController(
 			val subtitle = args["subtitle"] as? String ?: ""
 			val imageUrl = args["image"] as? String ?: ""
 			val contentType = args["contentType"] as? String ?: "videos/mp4"
+			val hlsVideoSegmentFormat = args["hlsVideoSegmentFormat"] as? Int ?: 0
 			val customData = (args["customData"] as Map<*, *>?)?.run {
 				JSONObject(this)
 			} ?: JSONObject()
+			
 			val liveStream = args["live"] as? Boolean ?: false
 
 			val movieMetadata = MediaMetadata(MediaMetadata.MEDIA_TYPE_MOVIE)

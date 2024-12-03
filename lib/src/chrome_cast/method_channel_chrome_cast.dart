@@ -76,21 +76,26 @@ class MethodChannelChromeCast extends ChromeCastPlatform {
   }
 
   @override
-  Future<void> loadMedia(String url,
-      String title,
-      String subtitle,
-      String image, {
-        bool? live,
-        Map<String, dynamic> customData = const {},
-        required int id,
-      }) {
+  Future<void> loadMedia(
+    String url,
+    String title,
+    String subtitle,
+    String image,
+    String contentType,
+    int hlsVideoSegmentFormat, {
+    bool? live,
+    Map<String, dynamic> customData = const {},
+    required int id,
+  }) {
     final Map<String, dynamic> args = {
       'url': url,
       'title': title,
       'subtitle': subtitle,
       'image': image,
       'customData': customData,
-      'live': live
+      'live': live,
+      'contentType': contentType,
+      'hlsVideoSegmentFormat': hlsVideoSegmentFormat
     };
     return channel(id)!.invokeMethod<void>('chromeCast#loadMedia', args);
   }
@@ -156,7 +161,7 @@ class MethodChannelChromeCast extends ChromeCastPlatform {
   Future<Duration> position({required int id}) async {
     return Duration(
       milliseconds:
-      (await channel(id)!.invokeMethod<int>('chromeCast#position')) ?? 0,
+          (await channel(id)!.invokeMethod<int>('chromeCast#position')) ?? 0,
     );
   }
 
@@ -164,7 +169,7 @@ class MethodChannelChromeCast extends ChromeCastPlatform {
   Future<Duration> duration({required int id}) async {
     return Duration(
       milliseconds:
-      (await channel(id)!.invokeMethod<int>('chromeCast#duration')) ?? 0,
+          (await channel(id)!.invokeMethod<int>('chromeCast#duration')) ?? 0,
     );
   }
 
@@ -182,8 +187,7 @@ class MethodChannelChromeCast extends ChromeCastPlatform {
 
   @override
   Future<String?> getAudioTrack({required int id}) async {
-    return await channel(id)!
-        .invokeMethod<String>('chromeCast#getAudioTrack');
+    return await channel(id)!.invokeMethod<String>('chromeCast#getAudioTrack');
   }
 
   @override
@@ -206,8 +210,7 @@ class MethodChannelChromeCast extends ChromeCastPlatform {
 
   @override
   Future<void> performClick({required int id}) {
-    return channel(id)!
-        .invokeMethod<void>('chromeCast#performClick');
+    return channel(id)!.invokeMethod<void>('chromeCast#performClick');
   }
 
   Future<dynamic> _handleMethodCall(MethodCall call, int id) async {

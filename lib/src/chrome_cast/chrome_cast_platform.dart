@@ -71,14 +71,17 @@ abstract class ChromeCastPlatform extends PlatformInterface {
   }
 
   /// Load a new media by providing an [url].
-  Future<void> loadMedia(String url,
-      String title,
-      String subtitle,
-      String image, {
-        bool? live,
-        Map<String, dynamic> customData = const {},
-        required int id,
-      }) {
+  Future<void> loadMedia(
+    String url,
+    String title,
+    String subtitle,
+    String image,
+    String contentType,
+    int hlsVideoSegmentFormat, {
+    bool? live,
+    Map<String, dynamic> customData = const {},
+    required int id,
+  }) {
     throw UnimplementedError('loadMedia() has not been implemented.');
   }
 
