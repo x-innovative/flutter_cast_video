@@ -62,8 +62,7 @@ class ChromeCastController(
 			movieMetadata.addImage(WebImage(Uri.parse(imageUrl)))
 			//movieMetadata.addImage(WebImage(Uri.parse(imageUrl)))
 
-			val media = MediaInfo.Builder(url).setStreamType(streamType).setContentType(contentType)
-				.setMetadata(movieMetadata).setCustomData(customData).build()
+			val media = MediaInfo.Builder(url).setStreamType(streamType).setContentType(contentType).setHlsVideoSegmentFormat(hlsVideoStr).setMetadata(movieMetadata).setCustomData(customData).build()
 			val options = MediaLoadOptions.Builder().setCustomData(customData).build()
 			val request =
 				sessionManager?.currentCastSession?.remoteMediaClient?.load(media, options)

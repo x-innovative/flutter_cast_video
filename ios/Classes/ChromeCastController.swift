@@ -308,6 +308,8 @@ class ChromeCastController: NSObject, FlutterPlatformView {
         
         let mediaInfoBuilder = GCKMediaInformationBuilder.init(contentURL: mediaUrl)
         
+        mediaInfoBuilder.metadata = movieMetadata
+
         mediaInfoBuilder.streamType = .buffered
         // 
         mediaInfoBuilder.contentType = contentType
